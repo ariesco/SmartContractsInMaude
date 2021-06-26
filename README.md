@@ -1,1 +1,1 @@
-# SmartContractsInMaude
+# Smart Contracts In Maude
