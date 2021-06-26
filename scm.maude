@@ -1,0 +1,150 @@
+load aux-modules.maude
+load grammar.maude
+load file.maude
+
+***(
+Interface: Command processing
+)
+mod MTP is
+ pr (MAYBE * (op maybe to null)){Oid} .
+ pr META-SCM-SIGN .
+ pr COMM-PARSING .
+ pr STD-STREAM .
+ pr LEXICAL .
+ inc FILE .
+
+ var  AtS : AttributeSet .
+ vars TL IN : TermList .
+ var  Text : String .
+ var  QIL : QidList .
+ var  Ty : Type .
+ var  T : Term .
+ var  L : Lang .
+ var  Q : Qid .
+
+ sort State .
+ *** Initial state, no tasks.
+ op idle : -> State [ctor] .
+ *** Pending commands must be processed.
+ op executeComm : -> State [ctor] .
+ *** A message is printed and we return to idle.
+ op write&idle : -> State [ctor] .
+ *** A message is printed and we leave the execution.
+ op write&out : -> State [ctor] .
+ *** A message is printed and keep executing.
+ op write&execute : -> State [ctor] .
+
+ *** Object and class definition
+ op SCM : -> Cid [ctor] .
+ op scm : -> Oid [ctor] .
+
+ *** Smart contract languages
+ sort Lang .
+ ops scilla : -> Lang [ctor] .
+
+ *** Attributes
+ op file:_ : Maybe{Oid} -> Attribute [ctor] .
+ op input:_ : TermList -> Attribute [ctor] .
+ op state:_ : State -> Attribute [ctor] .
+ op lang:_ : Lang -> Attribute [ctor] .
+
+ *********************************************************************
+ ***                    SELECT LANGUAGE                            ***
+ *********************************************************************
+
+ crl [sel-scilla] :
+     < scm : SCM | state: executeComm, input: ('select_.['token[T]], IN), lang: L, AtS >
+  => < scm : SCM | state: write&execute, input: IN, lang: scilla, AtS >
+      write(stdout, scm, printTokens('\n '\b 'Scilla '\o 'selected 'as 'programming 'language. '\n '\n))
+  if Q := downQid(T) /\
+     (Q == 'scilla) or (Q == 'Scilla) .
+
+ crl [sel-error] :
+     < scm : SCM | state: executeComm, input: ('select_.['token[T]], IN), AtS >
+  => < scm : SCM | state: write&execute, input: IN, AtS >
+     write(stdout, scm, printTokens('\n '\r '\! 'Error: ' '\o) + "unknown language.\n\n")
+  if Q := downQid(T) /\
+     (Q =/= 'scilla) and (Q =/= 'Scilla) .
+
+ ***********************************************************************
+ ***                     NO MORE COMMANDS                            ***
+ ***********************************************************************
+
+ rl [no-more-commands] :
+    < scm : SCM | state: executeComm, input: empty, AtS >
+ => < scm : SCM | state: idle, input: empty, AtS >
+    getLine(stdin, scm, "SCM> ") .
+
+ *********************************************************************
+ ***                      QUIT COMMAND                             ***
+ *********************************************************************
+
+ rl [quit] :
+    < scm : SCM | state: executeComm, input: ('q.@Command@, IN), AtS >
+ => < scm : SCM | state: write&out, input: IN, AtS >
+     write(stdout, scm, printTokens('\n '\g 'Thanks 'for 'using 'SCM! '\o '\n '\n)) .
+
+ ******************************************************************
+ ***                     PARSE INPUT                            ***
+ ******************************************************************
+
+ crl [parseComm] :
+     gotLine(scm, stdin, Text)
+     < scm : SCM | state: idle, input: IN, AtS >
+  => < scm : SCM | state: executeComm, input: TL, AtS >
+  if QIL := tokenize(Text) /\
+     {T, Ty} := metaParse(GRAMMAR, none, QIL, '@Input@) /\
+     TL := extractTerms(T) .
+
+ crl [parseCommError] :
+     gotLine(scm, stdin, Text)
+     < scm : SCM | state: idle, AtS >
+  => < scm : SCM | state: write&idle, AtS >
+     write(stdout, scm, printTokens('\n '\r 'Error: ' '\o) + "unknown command.\n\n")
+  if QIL := tokenize(Text) /\
+     not (metaParse(GRAMMAR, none, QIL, '@Input@) :: ResultPair) .
+
+ ******************************************************************
+ ***                     WRITE & IDLE                           ***
+ ******************************************************************
+
+ rl [write&idle] :
+    wrote(scm, stdout)
+    < scm : SCM | state: write&idle, AtS >
+ => < scm : SCM | state: idle, AtS >
+    getLine(stdin, scm, "SCM> ") .
+
+ ******************************************************************
+ ***                     WRITE & IDLE                           ***
+ ******************************************************************
+
+ rl [write&execute] :
+    wrote(scm, stdout)
+    < scm : SCM | state: write&execute, AtS >
+ => < scm : SCM | state: executeComm, AtS > .
+
+ *****************************************************************
+ ***                     WRITE & OUT                           ***
+ *****************************************************************
+
+ rl [write&idle] :
+    wrote(scm, stdout)
+    < scm : SCM | state: write&out, AtS >
+ => none .
+
+ ******************************
+ ***          RUN           ***
+ ******************************
+ op run : -> Configuration [ctor] .
+ eq run = <> < scm : SCM | file: null, state: idle, lang: scilla,
+                           input: empty >
+             getLine(stdin, scm, "SCM> ") .
+endm
+
+set print conceal on .
+print conceal module:_ .
+
+set print attribute on .
+set show advisories on .
+
+erew run .

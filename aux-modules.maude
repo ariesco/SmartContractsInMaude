@@ -1,0 +1,67 @@
+view Oid from TRIV to CONFIGURATION is
+ sort Elt to Oid .
+endv
+
+fmod MAYBE{X :: TRIV} is
+ sort Maybe{X} .
+ subsort X$Elt < Maybe{X} .
+ op maybe : -> Maybe{X} [ctor] .
+endfm
+
+fmod COMM-PARSING is
+ pr META-LEVEL .
+
+ var TL : TermList .
+ var T : Term .
+
+ op extractTerms : Term -> TermList .
+ eq extractTerms('__[TL]) = extractTerms*(TL) .
+ eq extractTerms(T) = T [owise] .
+
+ op extractTerms* : TermList -> TermList .
+ eq extractTerms*(empty) = empty .
+ eq extractTerms*((T, TL)) = extractTerms(T), extractTerms*(TL) .
+endfm
+
+fmod AUX-MODULE-OPS is
+ pr META-LEVEL .
+
+ var  SSDS : SubsortDeclSet .
+ var  EqS : EquationSet .
+ var  ODS : OpDeclSet .
+ vars IL IL' : ImportList .
+ var  PL : ParameterList .
+ vars TL TL' : TermList .
+ var  SS : SortSet .
+ var  RS : RuleSet .
+ var  MAS : MembAxSet .
+ var  TyL : TypeList .
+ var  Ct : Constant .
+ var  M : Module .
+ var  H : Header .
+ var  Q : Qid .
+
+ op setImports : Module ImportList -> Module .
+ eq setImports(fmod H is IL sorts SS . SSDS ODS MAS EqS endfm, IL')
+    = fmod H is IL' sorts SS . SSDS ODS MAS EqS endfm .
+ eq setImports(mod H is IL sorts SS . SSDS ODS MAS EqS RS endm, IL')
+    = mod H is IL' sorts SS . SSDS ODS MAS EqS RS endm .
+ eq setImports(fth H is IL sorts SS . SSDS ODS MAS EqS endfth, IL')
+    = fth H is IL' sorts SS . SSDS ODS MAS EqS endfth .
+ eq setImports(th H is IL sorts SS . SSDS ODS MAS EqS RS endth, IL')
+    = th H is IL' sorts SS . SSDS ODS MAS EqS RS endth .
+
+ op addImports : Module ImportList -> Module .
+ eq addImports(M, IL) = setImports(M, (getImports(M) IL)) .
+
+ op downQid : Term -> [Qid] [memo] .
+ eq downQid(Ct) = qid(substr(string(getName(Ct)), 1, length(string(getName(Ct))))) .
+
+ op downQidList : Term ~> QidList .
+ eq downQidList('nil.TypeList) = nil .
+ eq downQidList(('__[TL], TL')) = (downQidList(TL) downQidList(TL')) .
+ eq downQidList((Q, TL)) = (downQid(Q) downQidList(TL)) .
+ eq downQidList(empty) = nil .
+
+
+endfm

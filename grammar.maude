@@ -1,0 +1,53 @@
+set include BOOL off .
+
+fmod COMMAND-SIGN is
+ sorts @Token@ @Bubble@ @NeTokenList@ @Command@ .
+
+ op select_. : @Token@ -> @Command@ [ctor] .
+ op q : -> @Command@ [ctor] .
+endfm
+
+fmod SCM-SIGN is
+ pr COMMAND-SIGN .
+
+ sort @Input@ .
+
+ subsort @Command@ < @Input@ .
+
+ op __ : @Input@ @Input@ -> @Input@ [ctor assoc] .
+endfm
+
+fmod META-SCM-SIGN is
+ including AUX-MODULE-OPS .
+
+ op BUBBLES : -> FModule .
+ op GRAMMAR : -> FModule [memo] .
+
+ eq BUBBLES
+    = (fmod 'GRAMMAR is
+        including 'QID-LIST .
+        sorts none .
+        none
+        op 'token : 'Qid -> '@Token@
+             [special(
+               (id-hook('Bubble, '1 '1)
+                op-hook('qidSymbol, '<Qids>, nil, 'Qid)))] .
+        op 'bubble : 'QidList -> '@Bubble@
+             [special(
+               (id-hook('Bubble, '1 '-1 '`( '`))
+                op-hook('qidListSymbol, '__, 'QidList 'QidList, 'QidList)
+                op-hook('qidSymbol, '<Qids>, nil, 'Qid)
+                id-hook('Exclude, 'scilla)))] .
+        op 'neTokenList : 'QidList -> '@NeTokenList@
+             [special(
+               (id-hook('Bubble, '1 '-1 '`( '`))
+                op-hook('qidListSymbol, '__, 'QidList 'QidList, 'QidList)
+                op-hook('qidSymbol, '<Qids>, nil, 'Qid)
+                id-hook('Exclude, '. ': '`[ 'forall 'exists)))] .
+        none
+        none
+     endfm) .
+ eq GRAMMAR = addImports(BUBBLES, (including 'SCM-SIGN .)) .
+endfm
+
+set include BOOL on .
