@@ -69,7 +69,7 @@ mod MARLOWE-IO is
 
     ops pendingContract parsingContract openingContract openedContract readingContract
      pendingInputs parsingInputs openingInputs openedInputs readingInputs 
-     interpreter printResult end : -> IO-State [ctor] .
+     interpreter printResult contractExecuted end : -> IO-State [ctor] .
 
     op Marlowe : -> Cid .
     op marlowe : -> Oid .
@@ -175,17 +175,32 @@ mod MARLOWE-IO is
         if Inputs == ""
         then  
             closeFile(InputFile, marlowe)
-            < marlowe : Marlowe | state: printResult >
+            < marlowe : Marlowe | state: contractExecuted >
             execute(Contract, Str)
         else   
             < marlowe : Marlowe | state: readingInputs, inputs: (Str + Inputs) , contract: Contract, AtS > 
             getLine(InputFile, marlowe)
         fi .
 
-    rl [printResult] :
-        < marlowe : Marlowe | state: printResult, AtS > < contract : Contract | state: S, step: Step, Ats' >
+    rl [contractExecuted] :
+        < marlowe : Marlowe | state: contractExecuted, AtS > < contract : Contract | Ats' >
         =>
-        < marlowe : Marlowe | state: pendingContract > [print "Step: " Step "\n" S].
+        write(stdout, marlowe, printTokens(generateMessage(Ats')))
+        < marlowe : Marlowe | state: printResult > .
+    
+    rl [contractExecuted] :
+        < marlowe : Marlowe | state: printResult > 
+        =>
+        < marlowe : Marlowe | state: pendingContract > .
+
+    op generateMessage : AttributeSet -> QidList .
+    eq generateMessage(state: S, step: Step, Ats') = 'Step stepToString(Step) '\n stateToString(S) '\n .
+
+    op stateToString : State -> QidList .
+    eq stateToString(S) = metaPrettyPrint(semantics, none, upTerm(S), mixfix format number) .
+
+    op stepToString : Step -> QidList .
+    eq stepToString(Step) = metaPrettyPrint(semantics, none, upTerm(Step), mixfix format number) .
 
     op marloweRun : -> Configuration .
     eq marloweRun = <> < marlowe : Marlowe | state: pendingContract > .

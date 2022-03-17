@@ -7,7 +7,6 @@ load marlowe/loads.maude
 Interface: Command processing
 )
 mod MTP is
- pr (MAYBE * (op maybe to null)){Oid} .
  pr META-SCM-SIGN .
  pr COMM-PARSING .
  pr STD-STREAM .
@@ -48,7 +47,6 @@ mod MTP is
  ops scilla marlowe : -> Lang [ctor] .
 
  *** Attributes
- op file:_ : Maybe{Oid} -> Attribute [ctor] .
  op input:_ : TermList -> Attribute [ctor] .
  op state:_ : ScmState -> Attribute [ctor] .
  op lang:_ : Lang -> Attribute [ctor] .
@@ -93,7 +91,7 @@ rl [terminate-marlowe] :
    <> wrote(marlowe, stdout)
    < scm : SCM | state: executeMarlowe, lang: marlowe, AtS > < marlowe : Marlowe | state: end, Ats' >
    =>
-   < scm : SCM | file: null, state: idle, lang: scilla, input: empty >
+   < scm : SCM | state: idle, lang: scilla, input: empty >
    getLine(stdin, scm, "SCM> ") .
 
  ***********************************************************************
@@ -166,7 +164,7 @@ rl [terminate-marlowe] :
  ***          RUN           ***
  ******************************
  op run : -> Configuration [ctor] .
- eq run = <> < scm : SCM | file: null, state: idle, lang: scilla,
+ eq run = <> < scm : SCM | state: idle, lang: scilla,
                            input: empty >
              getLine(stdin, scm, "SCM> ") .
 endm
