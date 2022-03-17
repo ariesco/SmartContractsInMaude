@@ -1,0 +1,23 @@
+fmod CONSTANT-PARAM is
+    pr MARLOWE .
+    pr INT .
+
+    sorts ConstantParamKey ConstantParam ConstantParams .
+    subsort ConstantParam < ConstantParams .
+
+    op ConstantParam:_ : String -> ConstantParamKey [ctor] .
+    op [_,_] : ConstantParamKey Int -> ConstantParam [ctor] .
+    op emptyConstantParams : -> ConstantParams [ctor] .
+    op _/_ : ConstantParams ConstantParams -> ConstantParams [ctor assoc comm id: emptyConstantParams] .
+
+    vars I I' : Int .
+    var CPK : ConstantParamKey .
+    var CPs : ConstantParams .
+
+    op add : ConstantParams ConstantParamKey Int -> ConstantParams .
+    eq add(CPs / [CPK, I], CPK, I') = CPs / [CPK, I'].
+    eq add(CPs, CPK, I) = CPs / [CPK, I] [owise] .
+
+    op get : ConstantParams ConstantParamKey ~> Int .
+    eq get(CPs / [CPK, I], CPK) = I .
+endfm

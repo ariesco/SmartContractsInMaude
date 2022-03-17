@@ -1,0 +1,31 @@
+fmod CHOICES is
+    pr MARLOWE .
+    pr INT .
+
+    sorts Choice Choices ChoiceNum .
+    subsort Choice < Choices .
+
+    op [_,_] : ChoiceId ChoiceNum -> Choice [ctor] .
+
+    op ChoiceNum_ : Int -> ChoiceNum [ctor] .
+    op notFound : -> ChoiceNum [ctor] .
+
+    op emptyChoices : -> Choices [ctor] .
+    op _/_ : Choices Choices -> Choices [ctor assoc comm id: emptyChoices] .
+
+    vars I I' : Int .
+    vars CN CN' : ChoiceNum .
+    var CI : ChoiceId .
+    var Cs : Choices .
+
+    op save : Choices ChoiceId ChoiceNum -> Choices .
+    eq save(Cs / [CI, CN], CI, CN') = Cs / [CI, CN'] .
+    eq save(Cs, CI, CN) = Cs / [CI, CN] [owise] .
+
+    op get : Choices ChoiceId -> ChoiceNum .
+    eq get(Cs / [CI, CN], CI) = CN .
+    eq get(Cs, CI) = notFound [owise] .
+
+    op choiceNumToInt : ChoiceNum -> Int .
+    eq choiceNumToInt(ChoiceNum I) = I .
+endfm

@@ -1,0 +1,7 @@
+(ConstantParam "par1" To 2),
+(ConstantParam "par2" To 2),
+(ConstantParam "amount" To 10),
+(SlotParam "slot1" To 10),
+(SlotParam "slot2" To 20),
+(depositBy (Role "paco") Amount (Constant 12) Currency (Token "" "") IntoAccountOf (Role "role") ),
+notify

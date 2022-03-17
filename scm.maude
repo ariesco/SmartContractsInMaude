@@ -1,6 +1,7 @@
 load aux-modules.maude
 load grammar.maude
 load file.maude
+load marlowe/loads.maude
 
 ***(
 Interface: Command processing
@@ -12,8 +13,9 @@ mod MTP is
  pr STD-STREAM .
  pr LEXICAL .
  inc FILE .
+ pr MARLOWE-IO .
 
- var  AtS : AttributeSet .
+ vars  AtS Ats' : AttributeSet .
  vars TL IN : TermList .
  var  Text : String .
  var  QIL : QidList .
@@ -21,18 +23,21 @@ mod MTP is
  var  T : Term .
  var  L : Lang .
  var  Q : Qid .
+ vars F F' : Oid .
 
- sort State .
+ sort ScmState .
  *** Initial state, no tasks.
- op idle : -> State [ctor] .
+ op idle : -> ScmState [ctor] .
  *** Pending commands must be processed.
- op executeComm : -> State [ctor] .
+ op executeComm : -> ScmState [ctor] .
  *** A message is printed and we return to idle.
- op write&idle : -> State [ctor] .
+ op write&idle : -> ScmState [ctor] .
  *** A message is printed and we leave the execution.
- op write&out : -> State [ctor] .
+ op write&out : -> ScmState [ctor] .
  *** A message is printed and keep executing.
- op write&execute : -> State [ctor] .
+ op write&execute : -> ScmState [ctor] .
+
+ op executeMarlowe : -> ScmState [ctor] .
 
  *** Object and class definition
  op SCM : -> Cid [ctor] .
@@ -40,12 +45,12 @@ mod MTP is
 
  *** Smart contract languages
  sort Lang .
- ops scilla : -> Lang [ctor] .
+ ops scilla marlowe : -> Lang [ctor] .
 
  *** Attributes
  op file:_ : Maybe{Oid} -> Attribute [ctor] .
  op input:_ : TermList -> Attribute [ctor] .
- op state:_ : State -> Attribute [ctor] .
+ op state:_ : ScmState -> Attribute [ctor] .
  op lang:_ : Lang -> Attribute [ctor] .
 
  *********************************************************************
@@ -64,7 +69,32 @@ mod MTP is
   => < scm : SCM | state: write&execute, input: IN, AtS >
      write(stdout, scm, printTokens('\n '\r '\! 'Error: ' '\o) + "unknown language.\n\n")
   if Q := downQid(T) /\
-     (Q =/= 'scilla) and (Q =/= 'Scilla) .
+     (Q =/= 'scilla) and (Q =/= 'Scilla) 
+     and (Q =/= 'marlowe) and (Q =/= 'Marlowe) .
+
+ crl [sel-marlowe] :
+     < scm : SCM | state: executeComm, input: ('select_.['token[T]], IN), lang: L, AtS >
+  => < scm : SCM | state: executeMarlowe, lang: marlowe, AtS >
+      write(stdout, scm, printTokens('\n '\b 'Marlowe '\o 'selected 'as 'programming 'language. '\n '\n))
+  if Q := downQid(T) /\
+     (Q == 'marlowe) or (Q == 'Marlowe) .
+
+ ***********************************************************************
+ ***                    EXEC MARLOWE                                 ***
+ ***********************************************************************
+rl [exec-marlowe] :
+   wrote(scm, stdout)
+   < scm : SCM | state: executeMarlowe, lang: marlowe, AtS >
+   =>
+   execute-io
+   < scm : SCM | state: executeMarlowe, lang: marlowe, AtS > .
+
+rl [terminate-marlowe] :
+   <> wrote(marlowe, stdout)
+   < scm : SCM | state: executeMarlowe, lang: marlowe, AtS > < marlowe : Marlowe | state: end, Ats' >
+   =>
+   < scm : SCM | file: null, state: idle, lang: scilla, input: empty >
+   getLine(stdin, scm, "SCM> ") .
 
  ***********************************************************************
  ***                     NO MORE COMMANDS                            ***
@@ -148,3 +178,4 @@ set print attribute on .
 set show advisories on .
 
 erew run .
+q

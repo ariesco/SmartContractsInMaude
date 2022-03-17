@@ -1,0 +1,42 @@
+mod MARLOWE-EXECUTOR is
+    pr PROCESS-MODULE .
+    pr SEMANTICS .
+    pr LEXICAL .
+
+    op error : -> [Configuration] [ctor] .
+
+    vars S S' : String .
+    vars T T' : Term .
+    var C : Contract .
+
+    op bubble : -> FModule .
+    eq bubble = upModule('BUBBLE, false) .
+
+    op marlowe : -> FModule .
+    eq marlowe = upModule('MARLOWE, false) .
+
+    op semantics : -> FModule .
+    eq semantics = upModule('SEMANTICS, false) .
+
+    op input : -> FModule .
+    eq input = upModule('INPUT-SIGN, false) .
+
+    op execute : String String -> Configuration .
+    ceq execute(S, S') = downTerm(getTerm(metaRewrite(semantics, T, unbounded)), error)
+        if T := configuration(S, S') .
+
+    op configuration : String String -> Term .
+    ceq configuration(S, S') = '__['<>.Portal,'<_:_|_>['contract.Oid,'Contract.Cid, '_`,_['step:_['initial.Step],'_`,_['inputs:_[T'],'_`,_['contract:_[T],'state:_['initialState.State]]]]]]
+        if T :=  processMetaContract(generateMetaContract(S)) 
+        /\ T' := generateMetaInput(S').
+
+    op generateMetaInput : String -> Term .
+    eq generateMetaInput(S) = getTerm(metaParse(input, tokenize(S), 'InputList)) .
+
+    op processMetaContract : Term -> Term .
+    eq processMetaContract(T) = getTerm(metaReduce(processModule(marlowe, T), 'contract.Contract)) .
+
+    op generateMetaContract : String -> Term .
+    eq generateMetaContract(S) = getTerm(metaParse(bubble, tokenize(S), '@Contract@)) .
+
+endm

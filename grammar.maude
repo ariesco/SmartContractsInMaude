@@ -1,6 +1,6 @@
 set include BOOL off .
 
-fmod COMMAND-SIGN is
+fmod SCM-COMMAND-SIGN is
  sorts @Token@ @Bubble@ @NeTokenList@ @Command@ .
 
  op select_. : @Token@ -> @Command@ [ctor] .
@@ -8,7 +8,7 @@ fmod COMMAND-SIGN is
 endfm
 
 fmod SCM-SIGN is
- pr COMMAND-SIGN .
+ pr SCM-COMMAND-SIGN .
 
  sort @Input@ .
 

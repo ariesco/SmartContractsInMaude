@@ -1,0 +1,7 @@
+(ConstantParam "Interest instalment" To 10000000),
+(ConstantParam "Principal" To 30000000),
+(depositBy (Role "Guarantor") Amount (Constant 60000000) Currency (Token "" "") IntoAccountOf (Role "Lender") ),
+(depositBy (Role "Lender") Amount (Constant 30000000) Currency (Token "" "") IntoAccountOf (Role "Borrower") ),
+(depositBy (Role "Borrower") Amount (Constant 10000000) Currency (Token "" "") IntoAccountOf (Role "Lender") ),
+(depositBy (Role "Borrower") Amount (Constant 10000000) Currency (Token "" "") IntoAccountOf (Role "Lender") ),
+(depositBy (Role "Borrower") Amount (Constant 40000000) Currency (Token "" "") IntoAccountOf (Role "Lender") )

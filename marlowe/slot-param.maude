@@ -1,0 +1,22 @@
+fmod SLOT-PARAM is
+    pr MARLOWE .
+    pr INT .
+
+    sorts SlotParam SlotParams .
+    subsort SlotParam < SlotParams .
+
+    op [_,_] : TimeOut Int -> SlotParam [ctor] .
+    op emptySlotParams : -> SlotParams [ctor] .
+    op _/_ : SlotParams SlotParams -> SlotParams [ctor assoc comm id: emptySlotParams] .
+
+    vars I I' : Int .
+    var TO : TimeOut .
+    var SPs : SlotParams .
+
+    op add : SlotParams TimeOut Int -> SlotParams .
+    eq add(SPs / [TO, I], TO, I') = SPs / [TO, I'].
+    eq add(SPs, TO, I) = SPs / [TO, I] [owise] .
+
+    op get : SlotParams TimeOut ~> Int .
+    eq get(SPs / [TO, I], TO) = I .
+endfm
