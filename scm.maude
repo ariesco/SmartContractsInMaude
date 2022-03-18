@@ -36,7 +36,7 @@ mod MTP is
  *** A message is printed and keep executing.
  op write&execute : -> ScmState [ctor] .
 
- op executeMarlowe : -> ScmState [ctor] .
+ op executeLanguage : -> ScmState [ctor] .
 
  *** Object and class definition
  op SCM : -> Cid [ctor] .
@@ -72,7 +72,7 @@ mod MTP is
 
  crl [sel-marlowe] :
      < scm : SCM | state: executeComm, input: ('select_.['token[T]], IN), lang: L, AtS >
-  => < scm : SCM | state: executeMarlowe, lang: marlowe, AtS >
+  => < scm : SCM | state: executeLanguage, lang: marlowe, AtS >
       write(stdout, scm, printTokens('\n '\b 'Marlowe '\o 'selected 'as 'programming 'language. '\n '\n))
   if Q := downQid(T) /\
      (Q == 'marlowe) or (Q == 'Marlowe) .
@@ -82,14 +82,14 @@ mod MTP is
  ***********************************************************************
 rl [exec-marlowe] :
    wrote(scm, stdout)
-   < scm : SCM | state: executeMarlowe, lang: marlowe, AtS >
+   < scm : SCM | state: executeLanguage, lang: marlowe, AtS >
    =>
    execute-io
-   < scm : SCM | state: executeMarlowe, lang: marlowe, AtS > .
+   < scm : SCM | state: executeLanguage, lang: marlowe, AtS > .
 
 rl [terminate-marlowe] :
    <> wrote(marlowe, stdout)
-   < scm : SCM | state: executeMarlowe, lang: marlowe, AtS > < marlowe : Marlowe | state: end, Ats' >
+   < scm : SCM | state: executeLanguage, lang: marlowe, AtS > < marlowe : Marlowe | state: end, Ats' >
    =>
    < scm : SCM | state: idle, lang: scilla, input: empty >
    getLine(stdin, scm, "SCM> ") .
