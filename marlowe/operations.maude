@@ -1,0 +1,137 @@
+fmod OPERATIONS is
+    pr INPUT-SIGN .
+    pr STATE .
+
+    var Accs : Accounts .
+    var BLs : BoundValues .
+    var Ws : Warnings .
+    var Cs : Choices .
+    vars SPs SPs' : SlotParams .
+    vars CPs CPs' : ConstantParams .
+    vars IL IL' : InputList .
+    var P : Party .
+    var Payee : Payee .
+    var T : Token .
+    vars V V' : Value .
+    vars I I' I'' : Int .
+    vars S S' : State .
+    var AI : AccountId .
+    vars O O' : Observation .
+    var String : String .
+    var VI : ValueId .
+    var BL : BoundList .
+    var CI : ChoiceId .
+    var CN : ChoiceNum .
+    var TO : TimeOut .
+
+    op pay : State Payee Party Token Value -> State .
+    ceq pay(S, Payee, P, T, V) = updateState(S, addWarning(Ws, "Non-positive pay"))
+        if valueToInt(S, V) <= 0
+        /\ Ws := getWarnings(S) .
+
+    ceq pay(S, Payee, P, T, V) = updateState(S' ,pay(Accs, P, Payee, T, I))
+        if Accs := getAccounts(S)
+        /\ AI := generateAccountIdFromAccount(P, T)
+        /\ I := valueToInt(S, V)
+        /\ get(Accs, AI) < I
+        /\ Ws := getWarnings(S)
+        /\ S' := updateState(S, addWarning(Ws, "Partial pay")) .
+
+    ceq pay(S, Payee, P, T, V) = updateState(S,pay(Accs, P, Payee, T, I))
+        if Accs := getAccounts(S)
+        /\ I := valueToInt(S, V) [owise] .
+
+    op boundValue : State String Value -> State .
+    ceq boundValue(S, String, V) = updateState(S, save(BLs, VI , I))
+        if BLs := getBoundValues(S)
+        /\ VI := ValueId String
+        /\ I := valueToInt(S, V) .
+
+    op assert : State Observation -> State .
+    ceq assert(S, O) = updateState(S, addWarning(Ws, "Assertion failed - An assertion in the contract did not hold."))
+        if not observationToBool(S, O) 
+        /\ Ws := getWarnings(S).
+    eq assert(S, O) = S [owise] .
+
+    op choice : State ChoiceId Int -> State .
+    ceq choice(S, CI, I) = updateState(S, Cs)
+        if Cs := save(getChoices(S), CI, ChoiceNum I) .
+
+    op deposit : State Party Token Value -> State .
+    ceq deposit(S, P, T, V) = updateState(S, addWarning(Ws, "Non-positive deposit"))
+        if valueToInt(S, V) <= 0
+        /\ Ws := getWarnings(S) .
+    ceq deposit(S, P, T, V) = updateState(S, add(Accs, generateAccountIdFromAccount(P,T), I))
+        if I := valueToInt(S, V)
+        /\ Accs := getAccounts(S) [owise] .
+
+    op close : State -> State .
+    ceq close(S) = updateState(S, Accs)
+        if Accs := close(getAccounts(S)) .
+
+    op valueToInt : State Value -> Int .
+    eq valueToInt(S, AvailableMoney P T) = get(getAccounts(S), generateAccountIdFromAccount(P, T)) .
+    eq valueToInt(S, Constant I) = I .
+    eq valueToInt(S, NegValue V) = - valueToInt(S, V) .
+    eq valueToInt(S, AddValue V V') = valueToInt(S, V) + valueToInt(S, V') .
+    eq valueToInt(S, SubValue V V') = valueToInt(S, V) - valueToInt(S, V') .
+    eq valueToInt(S, MulValue V V') = valueToInt(S, V) * valueToInt(S, V') .
+    eq valueToInt(S, DivValue V V') = divInt(valueToInt(S, V), valueToInt(S, V'), 0) .
+    eq valueToInt(S, SlotIntervalStart) = getSlot(S) .
+    eq valueToInt(S, SlotIntervalEnd) = getSlot(S) .
+    eq valueToInt(S, Cond O V V') = if observationToBool(S, O)
+                                    then valueToInt(S, V)
+                                    else valueToInt(S, V')
+                                    fi .
+    eq valueToInt(S, UseValue String) = get(getBoundValues(S), ValueId String) .
+    ceq valueToInt(S, ChoiceValue CI) = choiceNumToInt(CN) 
+        if CN := get(getChoices(S), CI)
+        /\ CN =/= notFound .
+    ceq valueToInt(S, ChoiceValue CI) = 0
+        if CN := get(getChoices(S), CI)
+        /\ CN == notFound .
+    ceq valueToInt(S, ConstantParam String) = get(CPs, (ConstantParam: String))
+        if CPs := getConstantParams(S) .
+
+    op divInt : Int Int Int -> Int .
+    eq divInt(I, I', I'') = if I - I' >= 0 and I' =/= 0
+                        then
+                            divInt(I - I', I', s(I''))
+                        else
+                            I''
+                        fi .
+
+    op observationToBool : State Observation -> Bool .
+    eq observationToBool(S, TrueObs) = true .
+    eq observationToBool(S, FalseObs) = false .
+    eq observationToBool(S, AndObs O O') = observationToBool(S, O) and observationToBool(S, O') .
+    eq observationToBool(S, OrObs O O') = observationToBool(S, O) or observationToBool(S, O') .
+    eq observationToBool(S, NotObs O) = not observationToBool(S, O) .
+    eq observationToBool(S, ValueGE V V') = valueToInt(S, V) >= valueToInt(S, V') .
+    eq observationToBool(S, ValueGT V V') = valueToInt(S, V) > valueToInt(S, V') .
+    eq observationToBool(S, ValueLT V V') = valueToInt(S, V) < valueToInt(S, V') .
+    eq observationToBool(S, ValueLE V V') = valueToInt(S, V) <= valueToInt(S, V') .
+    eq observationToBool(S, ValueEQ V V') = valueToInt(S, V) == valueToInt(S, V') .
+    eq observationToBool(S, ChoseSomething CI) = if get(getChoices(S), CI) == notFound
+                                            then false
+                                            else true
+                                            fi .
+    op moveToSlot : State Int -> State .
+    eq moveToSlot(S, I) = updateState(S, I) .
+
+    op timeOutToInt : State TimeOut -> Int .
+    eq timeOutToInt(S, I) = I .
+    eq timeOutToInt(S, TO) = get(getSlotParams(S), TO) [owise] .
+
+    op saveSlotParams : State InputList -> State .
+    ceq saveSlotParams(S,( IL , (TO To I) , IL')) = saveSlotParams(S', (IL , IL'))
+        if SPs := getSlotParams(S)
+        /\ SPs' := add(SPs, TO, I)
+        /\ S' := updateState(S, SPs') .
+    ceq saveSlotParams(S,( IL , (ConstantParam String To I) , IL')) = saveSlotParams(S', (IL , IL'))
+        if CPs := getConstantParams(S)
+        /\ CPs' := add(CPs, ConstantParam: String, I)
+        /\ S' := updateState(S, CPs') .
+    eq saveSlotParams(S, IL) = S [owise] .
+    
+endfm

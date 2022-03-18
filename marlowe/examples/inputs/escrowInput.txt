@@ -1,0 +1,8 @@
+(SlotParam "Payment deadline" To 10) ,
+(SlotParam "Complaint deadline" To 20) ,
+(SlotParam "Complaint response deadline" To 30) ,
+(SlotParam "Mediation deadline" To 40) ,
+(ConstantParam "Price" To 20000000),
+(depositBy (Role "Buyer") Amount (Constant 20000000) Currency (Token "" "") IntoAccountOf (Role "Seller") ),
+(choice "Report problem" By Role "Buyer" WithValue 1),
+(choice "Confirm problem" By Role "Seller" WithValue 1)

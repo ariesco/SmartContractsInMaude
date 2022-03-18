@@ -1,0 +1,31 @@
+fmod BOUND-VALUES is
+    pr MARLOWE .
+    pr INT .
+
+    sorts BoundValue BoundValues .
+    subsort BoundValue < BoundValues .
+
+    op [_,_] : ValueId Int -> BoundValue [ctor] .
+
+    op emptyBoundValues : -> BoundValues [ctor] .
+    op _/_ : BoundValues BoundValues -> BoundValues [ctor assoc comm id: emptyBoundValues] .
+
+    vars I I' I'' : Int .
+    var VI : ValueId .
+    var BLs : BoundValues .
+    var BL : BoundList .
+
+    op save : BoundValues ValueId Int -> BoundValues .
+    eq save(BLs / [VI, I], VI, I') = BLs / [VI, I'] .
+    eq save(BLs, VI, I) = BLs / [VI, I] [owise] .
+
+    op get : BoundValues ValueId -> Int .
+    eq get(BLs / [VI, I], VI) = I .
+    eq get(BLs, VI) = 0 [owise] .
+
+    op intInBoundList : Int BoundList -> Bool .
+    eq intInBoundList(I, emptyBoundList) = false .
+    ceq intInBoundList(I, (Bound I' I'' , BL) ) = true
+        if I >= I' /\ I <= I'' .
+    eq intInBoundList(I, (Bound I' I'' , BL) ) = intInBoundList(I, BL) [owise] .
+endfm

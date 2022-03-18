@@ -1,0 +1,27 @@
+fmod INPUT-SIGN is
+    pr STRING .
+    pr INT .
+    pr MARLOWE .
+
+    sorts Input InputList .
+    subsort Input < InputList .
+
+    op moveToSlot_ : Int -> Input [ctor] .
+    op notify : -> Input [ctor] .
+    op choice_By_WithValue_ : String Party Int -> Input [ctor] .
+    op depositBy_Amount_Currency_IntoAccountOf_ : Party Value Token Party -> Input [ctor] .
+    op _To_ : TimeOut Int -> Input [ctor] .
+    op ConstantParam_To_ : String Int -> Input [ctor] .
+    op emptyInput : -> InputList [ctor] .
+    op _,_ : InputList InputList -> InputList [ctor assoc id: emptyInput] .
+
+    vars IL IL' : InputList .
+    var TO : TimeOut .
+    var I : Int .
+    var String : String .
+
+    op cleanInputList : InputList -> InputList .
+    eq cleanInputList( IL , (TO To I) , IL') = cleanInputList(IL, IL') .
+    eq cleanInputList( IL , (ConstantParam String To I) , IL') = cleanInputList(IL, IL') .
+    eq cleanInputList(IL) = IL [owise] .
+endfm

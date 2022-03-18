@@ -1,0 +1,65 @@
+fmod ACCOUNTS is
+    pr MARLOWE .
+    pr INT .
+
+    sorts AccountId AccountMoney Accounts AccountType .
+    subsort AccountMoney < Accounts .
+
+    ops Account Party : -> AccountType [ctor] .
+    op AccountId:_,_,_ : Party Token AccountType -> AccountId [ctor] .
+    op [_,_] : AccountId Int -> AccountMoney [ctor] .
+
+    op emptyAccounts : -> AccountMoney [ctor] .
+    op _/_ : Accounts Accounts -> Accounts [ctor assoc comm id: emptyAccounts] .
+
+    vars I I' amount : Int .
+    vars AI FAI : AccountId .
+    vars Accs Accs' : Accounts .
+    var T : Token .
+    var P : Party .
+    var Payee : Payee .
+
+    op add : Accounts AccountId Int -> Accounts .
+    eq add(Accs / [AI, I], AI, I') = Accs / [AI, I + I'] .
+    eq add(Accs, AI, I) = Accs / [AI, I] [owise] .
+
+    op sub : Accounts AccountId Int -> Accounts .
+    eq sub(Accs / [AI, I], AI, I') = Accs / [AI, I - I'] .
+    eq sub(Accs, AI, I) = Accs [owise] .
+
+
+    op pay : Accounts Party Payee Token Int -> Accounts .
+    ceq pay (Accs, P, Payee, T, I) = add(sub(Accs, FAI, amount), AI , amount)
+        if FAI := generateAccountIdFromAccount(P, T)
+        /\ get(Accs, FAI) >= I
+        /\ amount := I 
+        /\ AI := generateAccountId(Payee, T) .
+
+    ceq pay (Accs, P, Payee, T, I) = add(sub(Accs, FAI, amount), AI , amount)
+        if FAI := generateAccountIdFromAccount(P, T)
+        /\ I > get(Accs, FAI)
+        /\ amount := get(Accs, FAI) 
+        /\ AI := generateAccountId(Payee, T) .
+    
+    op close : Accounts -> Accounts .
+    eq close(emptyAccounts) = emptyAccounts .
+    ceq close(Accs / [(AccountId: P,T,Account), I]) = close(Accs')
+        if Accs' := add(Accs,(AccountId: P,T, Party), I) .
+    eq close(Accs) = Accs [owise] .
+
+    op get : Accounts AccountId -> Int .
+    eq get(Accs / [AI, I], AI) = I .
+    eq get(Accs, AI) = 0 [owise] .
+
+
+    op generateAccountId : Party Token -> AccountId .
+    eq generateAccountId(P, T) =  AccountId: P, T , Party .
+
+    op generateAccountIdFromAccount : Party Token -> AccountId .
+    eq generateAccountIdFromAccount(P, T) =  AccountId: P, T , Account .
+
+    op generateAccountId : Payee Token -> AccountId .
+    eq generateAccountId(Party P, T) =  AccountId: P, T , Party .
+    eq generateAccountId(Account P, T) =  AccountId: P, T , Account .
+
+endfm

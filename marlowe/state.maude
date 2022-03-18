@@ -1,0 +1,76 @@
+fmod STATE is
+    pr ACCOUNTS .
+    pr BOUND-VALUES .
+    pr CHOICES .
+    pr SLOT-PARAM .
+    pr CONSTANT-PARAM .
+
+    sorts State Warning Warnings .
+    subsort Warning < Warnings .
+
+    op [_. _] : Nat String -> Warning [ctor] .
+    op emptyWarnings : -> Warnings [ctor] .
+    op _,_ : Warnings Warnings -> Warnings [ctor assoc id: emptyWarnings] .
+
+    op {_,_,_,_,_,_,_} : Int Accounts BoundValues Choices Warnings SlotParams ConstantParams -> State [ctor format (d nnt d nnt d nnt d nnt d nnt d nnt d nnt n d)] .
+
+    vars Accs Accs' : Accounts .
+    vars BLs BLs' : BoundValues .
+    vars Ws Ws' : Warnings .
+    vars Cs Cs' : Choices .
+    vars SPs SPs' : SlotParams .
+    vars CPs CPs' : ConstantParams .
+    vars I I' : Int .
+    vars String String' : String .
+    var N : Nat .
+
+    op initialState : -> State [ctor] .
+    eq initialState = {0, emptyAccounts, emptyBoundValues, emptyChoices, emptyWarnings, emptySlotParams, emptyConstantParams} .
+
+    op addWarning : Warnings String -> Warnings .
+    eq addWarning(emptyWarnings, String) = [1 . String] .
+    eq addWarning((Ws, [N . String]), String') = Ws, [N . String], [s(N) . String'] .
+
+    op getAccounts : State -> Accounts .
+    eq getAccounts({I, Accs, BLs, Cs, Ws, SPs, CPs}) = Accs .
+
+    op getSlot : State -> Int .
+    eq getSlot({I, Accs, BLs, Cs, Ws, SPs, CPs}) = I .
+
+    op getBoundValues : State -> BoundValues .
+    eq getBoundValues({I, Accs, BLs, Cs, Ws, SPs, CPs}) = BLs .
+
+    op getChoices : State -> Choices .
+    eq getChoices({I, Accs, BLs, Cs, Ws, SPs, CPs}) = Cs .
+
+    op getWarnings : State -> Warnings .
+    eq getWarnings({I, Accs, BLs, Cs, Ws, SPs, CPs}) = Ws .
+
+    op getSlotParams : State -> SlotParams .
+    eq getSlotParams({I, Accs, BLs, Cs, Ws, SPs, CPs}) = SPs .
+
+    op getConstantParams : State -> ConstantParams .
+    eq getConstantParams({I, Accs, BLs, Cs, Ws, SPs, CPs}) = CPs .
+
+    op updateState : State Int -> State .
+    eq updateState({I, Accs, BLs, Cs, Ws, SPs, CPs}, I') = {I', Accs, BLs, Cs, Ws, SPs, CPs} .
+
+    op updateState : State Accounts -> State .
+    eq updateState({I, Accs, BLs, Cs, Ws, SPs, CPs}, Accs') = {I, Accs', BLs, Cs, Ws, SPs, CPs} .
+
+    op updateState : State BoundValues -> State .
+    eq updateState({I, Accs, BLs, Cs, Ws, SPs, CPs}, BLs') = {I, Accs, BLs', Cs, Ws, SPs, CPs} .
+
+    op updateState : State Choices -> State .
+    eq updateState({I, Accs, BLs, Cs, Ws, SPs, CPs}, Cs') = {I, Accs, BLs, Cs', Ws, SPs, CPs} .
+
+    op updateState : State Warnings -> State .
+    eq updateState({I, Accs, BLs, Cs, Ws, SPs, CPs}, Ws') = {I, Accs, BLs, Cs, Ws', SPs, CPs} .
+
+    op updateState : State SlotParams -> State .
+    eq updateState({I, Accs, BLs, Cs, Ws, SPs, CPs}, SPs') = {I, Accs, BLs, Cs, Ws, SPs', CPs} .
+
+    op updateState : State ConstantParams -> State .
+    eq updateState({I, Accs, BLs, Cs, Ws, SPs, CPs}, CPs') = {I, Accs, BLs, Cs, Ws, SPs, CPs'} .
+
+endfm

@@ -1,0 +1,79 @@
+fmod COMMAND-SIGN is
+    pr STRING .
+    pr INT .
+
+    sorts @Token@ @Command@ @TokenMW@ @Party@ @Payee@ 
+        @Value@ @Contract@ @ChoiceId@ @Slot@ @ValueId@ 
+        @Observation@ @Action@ @CaseElement@ @CaseList@ @CaseField@
+        @BoundElement@ @BoundList@ @BoundField@ @TimeOut@ .
+
+    subsort @BoundElement@ < @BoundList@ .
+    subsort @CaseElement@ < @CaseList@ .
+    subsort Int < @TimeOut@ .
+
+    op Role_ : String -> @Party@ [ctor] .
+    op PK_ : String -> @Party@ [ctor] .
+
+    op Party_ : @Party@ -> @Payee@ [ctor] .
+    op Account_ : @Party@ -> @Payee@ [ctor] .
+
+    op Token__ : String String -> @TokenMW@ [ctor] .
+
+    op ChoiceId__ : String @Party@ -> @ChoiceId@ [ctor] .
+
+    op Slot_ : Int -> @Slot@ [ctor] .
+
+    op ValueId_ : String -> @ValueId@ [ctor] .
+
+    op AndObs__ : @Observation@ @Observation@ -> @Observation@ [ctor] .
+    op OrObs__ : @Observation@ @Observation@ -> @Observation@ [ctor] .
+    op NotObs_ : @Observation@ -> @Observation@ [ctor] .
+    op ChoseSomething_ : @ChoiceId@ -> @Observation@ [ctor] .
+    op ValueGE__ : @Value@ @Value@ -> @Observation@ [ctor] .
+    op ValueGT__ : @Value@ @Value@ -> @Observation@ [ctor] .
+    op ValueLT__ : @Value@ @Value@ -> @Observation@ [ctor] .
+    op ValueLE__ : @Value@ @Value@ -> @Observation@ [ctor] .
+    op ValueEQ__ : @Value@ @Value@ -> @Observation@ [ctor] .
+    op TrueObs : -> @Observation@ [ctor] .
+    op FalseObs : -> @Observation@ [ctor] .
+
+    op AvailableMoney__ : @Party@ @TokenMW@ -> @Value@ [ctor] .
+    op Constant_ : Int -> @Value@ [ctor] .
+    op NegValue_ : @Value@ -> @Value@ [ctor] .
+    op AddValue__ : @Value@ @Value@ -> @Value@ [ctor] .
+    op SubValue__ : @Value@ @Value@ -> @Value@ [ctor] .
+    op MulValue__ : @Value@ @Value@ -> @Value@ [ctor] .
+    op DivValue__ : @Value@ @Value@ -> @Value@ [ctor] .
+    op ChoiceValue_ : @ChoiceId@ -> @Value@ [ctor] .
+    op SlotIntervalStart : -> @Value@ [ctor] .
+    op SlotIntervalEnd : -> @Value@ [ctor] .
+    --- op UseValue_ : @ValueId@ -> @Value@ [ctor] . TODO: Revisar este constructor
+    op UseValue_ : String -> @Value@ [ctor] .
+    op Cond___ : @Observation@ @Value@ @Value@ -> @Value@ [ctor] .
+    op ConstantParam_ : String -> @Value@ [ctor] .
+
+    op Bound__ : Int Int -> @BoundElement@ [ctor prec 39] .
+    op _,_ : @BoundList@ @BoundList@ -> @BoundList@ [ctor assoc] .
+    op [_] : @BoundList@ -> @BoundField@ [ctor] .
+
+    op Deposit____ : @Party@ @Party@ @TokenMW@ @Value@ -> @Action@ [ctor] .
+    op Choice__ : @ChoiceId@ @BoundField@ -> @Action@ [ctor] .
+    op Notify_ : @Observation@ -> @Action@ [ctor] .
+
+    op Case__ : @Action@ @Contract@ -> @CaseElement@ [ctor prec 39] .
+    op _,_ : @CaseList@ @CaseList@ -> @CaseList@ [ctor assoc] .
+    op [_] : @CaseList@ -> @CaseField@ [ctor] .
+    op [] : -> @CaseField@ [ctor] . 
+
+    op SlotParam_ : String -> @TimeOut@ [ctor] .
+
+    op Close : -> @Contract@ [ctor] .
+    op Pay_____ : @Party@ @Payee@ @TokenMW@ @Value@ @Contract@ -> @Contract@ [ctor] .
+    op If___ : @Observation@ @Contract@ @Contract@ -> @Contract@ [ctor] .
+    op When___ : @CaseField@ @TimeOut@ @Contract@ -> @Contract@ [ctor] .
+    op Let___ : String @Value@ @Contract@ -> @Contract@ [ctor] .
+    op Assert__ : @Observation@ @Contract@ -> @Contract@ [ctor] .
+
+    op ada : -> @TokenMW@ .
+    eq ada = Token "" "" .
+endfm

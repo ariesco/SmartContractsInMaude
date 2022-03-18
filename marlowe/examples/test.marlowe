@@ -1,0 +1,28 @@
+When
+    [Case
+        (Deposit
+            (Role "role")
+            (Role "paco")
+            (Token "" "")
+            (AddValue
+                (ConstantParam "amount")
+                (ConstantParam "par1")
+            )
+        )
+        (When
+            [Case
+                (Notify
+                    (ValueEQ
+                        (ConstantParam "par1")
+                        (ConstantParam "par2")
+                    ))
+                (Let
+                    "value"
+                    (ConstantParam "amount")
+                    Close 
+                )]
+            (SlotParam "slot2")
+            Close 
+        )]
+    (SlotParam "slot1")
+    Close 

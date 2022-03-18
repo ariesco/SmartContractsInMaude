@@ -1,0 +1,78 @@
+fmod PROCESS-MODULE is
+    pr META-LEVEL .
+
+    var FM : FModule .
+    vars T T' T'' Party Party' Payee Token Value C C' : Term .
+    var LT : TermList .
+    var H : Header .
+    var IL : ImportList .
+    var SS : SortSet .
+    var SSDS : SubsortDeclSet .
+    var ODS : OpDeclSet .
+    var MAS : MembAxSet .
+    var EqS : EquationSet .
+    var Eq : Equation .
+    var OD : OpDecl .
+
+    op processModule : FModule Term -> FModule .
+    eq processModule(FM, T) = addEquation(FM, eq 'contract.Contract = parseContract(T) [none] .) .
+
+    op parseContract : Term -> Term .
+    eq parseContract('Close.@Contract@) = 'Close.Contract .
+    eq parseContract('Pay_____[LT]) = parsePay('Pay_____[LT]) .
+    eq parseContract('If___[LT]) = parseIf('If___[LT]) .
+    eq parseContract('When___[LT]) = parseWhen('When___[LT]) .
+    eq parseContract('Let___[LT]) = parseLet('Let___[LT]) .
+    eq parseContract('Assert__[LT]) = parseAssert('Assert__[LT]) .
+    eq parseContract(T) = 'Close.Contract [owise] .
+
+    op parsePay : Term -> Term .
+    eq parsePay('Pay_____[Party,Payee, Token, Value, C]) = 'Pay_____[Party,Payee, Token, parseValue(Value), parseContract(C)] .
+
+    op parseIf : Term -> Term .
+    eq parseIf('If___[T, C, C']) = 'If___[parseObservation(T), parseContract(C), parseContract(C')] .
+
+    op parseWhen : Term -> Term .
+    eq parseWhen('When___['`[_`][T], T', C]) = 'When___['`[_`][parseCases(T)], T', parseContract(C)] .
+    eq parseWhen('When___['`[`].@CaseField@, T', C]) = 'When___['`[`].CaseField, T', parseContract(C)] .
+
+    op parseLet : Term -> Term .
+    eq parseLet('Let___[T, Value, C]) = 'Let___[T, parseValue(Value), parseContract(C)] .
+
+    op parseAssert : Term -> Term .
+    eq parseAssert('Assert__[T, C]) = 'Assert__[parseObservation(T), parseContract(C)] .
+
+    op parseCases : Term -> TermList .
+    eq parseCases('Case__['Notify_[T], C]) = 'Case__['Notify_[parseObservation(T)], parseContract(C)] .
+    eq parseCases('Case__['Choice__[T, T'], C]) = 'Case__['Choice__[T, T'], parseContract(C)] .
+    eq parseCases('Case__['Deposit____[Party, Party', Token, Value], C]) = 'Case__['Deposit____[Party, Party', Token, parseValue(Value)], parseContract(C)] .
+    eq parseCases('_`,_[T,T']) = '_`,_[parseCases(T),parseCases(T')] .
+
+    op parseValue : Term -> Term .
+    eq parseValue('SlotIntervalStart.@Value@) = 'SlotIntervalStart.Value .
+    eq parseValue('SlotIntervalEnd.@Value@) = 'SlotIntervalEnd.Value .
+    eq parseValue('NegValue_[T]) = 'NegValue_[parseValue(T)] .
+    eq parseValue('AddValue__[T, T']) = 'AddValue__[parseValue(T), parseValue(T')] .
+    eq parseValue('SubValue__[T, T']) = 'SubValue__[parseValue(T), parseValue(T')] .
+    eq parseValue('MulValue__[T, T']) = 'MulValue__[parseValue(T), parseValue(T')] .
+    eq parseValue('DivValue__[T, T']) = 'DivValue__[parseValue(T), parseValue(T')] .
+    eq parseValue('Cond___[T, T', T'']) = 'Cond___[parseObservation(T), parseValue(T'), parseValue(T'')] .
+    eq parseValue(T) = T [owise] .
+
+    op parseObservation : Term -> Term .
+    eq parseObservation('TrueObs.@Observation@) = 'TrueObs.Observation .
+    eq parseObservation('FalseObs.@Observation@) = 'FalseObs.Observation .
+    eq parseObservation('AndObs__[T, T']) = 'AndObs__[parseObservation(T), parseObservation(T')] .
+    eq parseObservation('OrObs__[T, T']) = 'OrObs__[parseObservation(T), parseObservation(T')] .
+    eq parseObservation('NotObs_[T]) = 'NotObs__[parseObservation(T)] .
+    eq parseObservation('ValueGE__[T, T']) = 'ValueGE__[parseValue(T), parseValue(T')] .
+    eq parseObservation('ValueGT__[T, T']) = 'ValueGT__[parseValue(T), parseValue(T')] .
+    eq parseObservation('ValueLT__[T, T']) = 'ValueLT__[parseValue(T), parseValue(T')] .
+    eq parseObservation('ValueLE__[T, T']) = 'ValueLE__[parseValue(T), parseValue(T')] .
+    eq parseObservation('ValueEQ__[T, T']) = 'ValueEQ__[parseValue(T), parseValue(T')] .
+    eq parseObservation(T) = T [owise] .
+
+    op addEquation : FModule Equation -> FModule .
+    eq addEquation(fmod H is IL sorts SS . SSDS ODS MAS EqS endfm, Eq)
+        = fmod H is IL sorts SS . SSDS ODS MAS (EqS Eq) endfm .
+endfm

@@ -1,0 +1,213 @@
+set include BOOL off .
+
+fmod IO-SIGN is
+    sort @Token@ @Command@ .
+    subsort @Token@ < @Command@ .
+    op __ : @Command@ @Command@ -> @Command@ [ctor assoc] .
+endfm
+
+set include BOOL on .
+
+fmod IO-BUBBLE is 
+    inc QID-LIST .
+    pr IO-SIGN .
+
+    op token : Qid -> @Token@
+    [special (id-hook Bubble   (1 1)
+           op-hook qidSymbol (<Qids> : ~> Qid))] .
+endfm
+
+fmod IO-INPUT is
+    pr STRING .
+    sort Command IO-Input .
+    subsort Command < IO-Input .
+
+    op contract_ : String -> Command [ctor] .  
+    op inputs_ : String -> Command [ctor] .
+    op q : -> Command [ctor] .
+    op invalid : -> Command [ctor] .
+    op __ : IO-Input IO-Input -> IO-Input [ctor assoc] .
+endfm
+
+fmod PROCESS-TERM is
+    pr META-LEVEL .
+    pr IO-INPUT .
+    pr LEXICAL .
+    pr CONVERSION .
+
+    op error : -> [Qid] [ctor] .
+
+    op io-bubble : -> FModule .
+    eq io-bubble = upModule('IO-BUBBLE, false) .
+
+    var S : String .
+    var T : Term .
+
+    op parseTerm : String -> IO-Input .
+    ceq parseTerm(S) = processTerm(T)
+        if T := getTerm(metaParse(io-bubble, tokenize(S), '@Command@)) .
+
+    op processTerm : Term -> IO-Input .
+    eq processTerm('token[''q.Qid]) = q .
+    eq processTerm('__['token[''c.Qid],'token[T]]) = contract qidToString(T) .
+    eq processTerm('__['token[''i.Qid],'token[T]]) = inputs qidToString(T) .
+    eq processTerm(T) = invalid [owise] .
+
+    op qidToString : Term -> String .
+    eq qidToString(T) = string(downTerm(T, error)) .
+
+endfm
+
+
+mod MARLOWE-IO is
+    inc STD-STREAM .
+    pr PROCESS-TERM .
+    inc FILE . 
+    pr MARLOWE-EXECUTOR .
+
+    sorts IO-State .
+
+    ops pendingContract parsingContract openingContract openedContract readingContract
+     pendingInputs parsingInputs openingInputs openedInputs readingInputs 
+     interpreter printResult contractExecuted end : -> IO-State [ctor] .
+
+    op Marlowe : -> Cid .
+    op marlowe : -> Oid .
+
+    op state:_ : IO-State -> Attribute [ctor] .
+    op input:_ : IO-Input -> Attribute [ctor] .
+    op contractFile:_ : Oid -> Attribute [ctor] .
+    op inputFile:_ : Oid -> Attribute [ctor] .
+    op contract:_ : String -> Attribute [ctor] .
+    op inputs:_ : String -> Attribute [ctor] .
+    op result:_ : Term -> Attribute [ctor] .
+
+    vars AtS Ats' : AttributeSet .
+    var I : IO-Input .
+    vars Str Contract Inputs : String .
+    vars ContractFile InputFile : Oid .
+    vars ContractFileName InputFileName : String .
+    var S : State .
+    var Step : Step .
+
+    rl [invalid] :
+        < marlowe : Marlowe | input: invalid , AtS >
+    =>
+        < marlowe : Marlowe | state: pendingContract > 
+         write(stdout, marlowe, printTokens('\r 'Invalid 'input '\o '\n)) .
+
+    rl [quit] :
+        < marlowe : Marlowe | input: q , AtS >
+    =>
+        < marlowe : Marlowe | state: end > 
+         write(stdout, marlowe, printTokens('\g 'Bye! '\o '\n)) .
+
+
+    rl [pendingContract] : 
+        < marlowe : Marlowe | state: pendingContract, AtS >
+    =>
+        < marlowe : Marlowe | state: parsingContract, AtS >
+        getLine(stdin, marlowe, "Contract: > ") .
+
+    crl [parsingContract] :
+        gotLine(marlowe, stdin, Str)
+        < marlowe : Marlowe | state: parsingContract, AtS >
+     => 
+        < marlowe : Marlowe | state: openingContract, input: I, AtS >
+        if I := parseTerm(Str) .
+
+    rl [openingContract] :
+        < marlowe : Marlowe | state: openingContract, input: contract ContractFileName , AtS >
+     => 
+        < marlowe : Marlowe | state: openedContract,  AtS > 
+        openFile(fileManager, marlowe, ContractFileName, "r") .
+
+    rl [openedContract] :
+        openedFile(marlowe, fileManager, ContractFile)
+        < marlowe : Marlowe | state: openedContract, AtS >
+     => 
+        < marlowe : Marlowe | state: readingContract, contractFile: ContractFile, contract: "", AtS >
+        getLine(ContractFile, marlowe) .
+
+    rl [readingContract] :
+        gotLine(marlowe, ContractFile, Contract) 
+        < marlowe : Marlowe | state: readingContract, contractFile: ContractFile, contract: Str, AtS >
+     => 
+        if Contract == ""
+        then  
+            < marlowe : Marlowe | state: pendingInputs, contractFile: ContractFile, contract: Str, AtS > 
+            closeFile(ContractFile, marlowe)  
+        else   
+            < marlowe : Marlowe | state: readingContract, contractFile: ContractFile, contract: (Str + Contract), AtS > 
+            getLine(ContractFile, marlowe)
+        fi . 
+
+    rl [pendingInputs] :
+        < marlowe : Marlowe | state: pendingInputs, AtS >
+    =>
+        < marlowe : Marlowe | state: parsingInputs, AtS >
+        getLine(stdin, marlowe, "Inputs: > ") .
+
+    crl [parsingInputs] :
+        gotLine(marlowe, stdin, Str)
+        < marlowe : Marlowe | state: parsingInputs, AtS >
+     => 
+        < marlowe : Marlowe | state: openingInputs, input: I, AtS >
+        if I := parseTerm(Str) .
+
+    rl [openingInputs] :
+        < marlowe : Marlowe | state: openingInputs, input: inputs InputFileName , AtS >
+     => 
+        < marlowe : Marlowe | state: openedInputs,  AtS > 
+        openFile(fileManager, marlowe, InputFileName, "r") .
+
+    rl [openedInputs] :
+        openedFile(marlowe, fileManager, InputFile)
+        < marlowe : Marlowe | state: openedInputs, AtS >
+     => 
+        < marlowe : Marlowe | state: readingInputs, inputs: "", AtS >
+        getLine(InputFile, marlowe) .
+    
+    rl [readingInputs] :
+        gotLine(marlowe, InputFile, Inputs) 
+        < marlowe : Marlowe | state: readingInputs, inputs: Str , contract: Contract, AtS >
+     => 
+        if Inputs == ""
+        then  
+            closeFile(InputFile, marlowe)
+            < marlowe : Marlowe | state: contractExecuted >
+            execute(Contract, Str)
+        else   
+            < marlowe : Marlowe | state: readingInputs, inputs: (Str + Inputs) , contract: Contract, AtS > 
+            getLine(InputFile, marlowe)
+        fi .
+
+    rl [contractExecuted] :
+        < marlowe : Marlowe | state: contractExecuted, AtS > < contract : Contract | Ats' >
+        =>
+        write(stdout, marlowe, printTokens(generateMessage(Ats')))
+        < marlowe : Marlowe | state: printResult > .
+    
+    rl [contractExecuted] :
+        < marlowe : Marlowe | state: printResult > 
+        =>
+        < marlowe : Marlowe | state: pendingContract > .
+
+    op generateMessage : AttributeSet -> QidList .
+    eq generateMessage(state: S, step: Step, Ats') = 'Step stepToString(Step) '\n stateToString(S) '\n .
+
+    op stateToString : State -> QidList .
+    eq stateToString(S) = metaPrettyPrint(semantics, none, upTerm(S), mixfix format number) .
+
+    op stepToString : Step -> QidList .
+    eq stepToString(Step) = metaPrettyPrint(semantics, none, upTerm(Step), mixfix format number) .
+
+    op marloweRun : -> Configuration .
+    eq marloweRun = <> < marlowe : Marlowe | state: pendingContract > .
+
+    op marlowe-io : -> Module .
+    eq marlowe-io = upModule('MARLOWE-IO , false) .
+
+    op execute-io : -> Configuration .
+    eq execute-io = downTerm(getTerm(metaRewrite(marlowe-io, upTerm(marloweRun), unbounded)), error) .
+endm

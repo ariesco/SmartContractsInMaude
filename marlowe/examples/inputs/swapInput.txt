@@ -1,0 +1,6 @@
+(SlotParam "Timeout for Ada deposit" To 2) ,
+(SlotParam "Timeout for dollar deposit" To 5) ,
+(ConstantParam "Amount of Ada" To 3),
+(ConstantParam "Amount of dollars" To 4),
+(depositBy (Role "Ada provider") Amount (Constant 3000000) Currency (Token "" "") IntoAccountOf (Role "Ada provider") ),
+(depositBy (Role "Dollar provider") Amount (Constant 4) Currency (Token "85bb65" "dollar") IntoAccountOf (Role "Dollar provider") )

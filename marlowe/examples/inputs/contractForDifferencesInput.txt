@@ -1,0 +1,15 @@
+(SlotParam "Party deposit deadline" To 10) ,
+(SlotParam "Counterparty deposit deadline" To 20) ,
+(SlotParam "First window beginning" To 30) ,
+(SlotParam "First window deadline" To 40) ,
+(SlotParam "Second window beginning" To 50) ,
+(SlotParam "Second window deadline" To 60) ,
+(ConstantParam "Amount paid by party" To 2000000),
+(ConstantParam "Amount paid by counterparty" To 5000000),
+(depositBy (Role "Party") Amount (Constant 2000000) Currency (Token "" "") IntoAccountOf (Role "Party") ),
+(depositBy (Role "Counterparty") Amount (Constant 5000000) Currency (Token "" "") IntoAccountOf (Role "Counterparty") ),
+moveToSlot 30 ,
+(choice "Price in first window" By Role "Oracle" WithValue 1000000),
+moveToSlot 50 ,
+(choice "Price in second window" By Role "Oracle" WithValue 2000000)
+

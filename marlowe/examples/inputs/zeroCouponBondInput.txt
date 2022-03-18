@@ -1,0 +1,6 @@
+(SlotParam "Loan deadline" To 10) ,
+(SlotParam "Payback deadline" To 15) ,
+(ConstantParam "Interest" To 5000000),
+(ConstantParam "Amount" To 10000000),
+(depositBy (Role "Lender") Amount (Constant 10000000) Currency (Token "" "") IntoAccountOf (Role "Lender") ),
+(depositBy (Role "Borrower") Amount (Constant 15000000) Currency (Token "" "") IntoAccountOf (Role "Borrower") )

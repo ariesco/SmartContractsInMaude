@@ -1,0 +1,119 @@
+mod SEMANTICS is
+    pr MARLOWE .
+    pr OPERATIONS .
+    inc STD-STREAM .
+    pr INPUT-SIGN .
+
+    sort Step .
+
+    ops initial executing finished : -> Step [ctor] .
+    
+    op Contract : -> Cid [ctor] .
+    op contract : -> Oid [ctor] .
+
+    op contract:_ : Contract -> Attribute [ctor] .
+    op state:_ : State -> Attribute [ctor] .
+    op inputs:_ : InputList -> Attribute [ctor] .
+    op step:_ : Step -> Attribute [ctor] .
+
+    vars Party Party' : Party .
+    var Payee : Payee .
+    var Token : Token .
+    vars Value Value' : Value .
+    vars C C' : Contract .
+    var Accs : Accounts .
+    vars S S' : State .
+    var O : Observation .
+    var String : String .
+    var TO : TimeOut .
+    vars IL IL' : InputList .
+    vars CL CL' : CaseList .
+    var CF : CaseField .
+    vars I I' : Int .
+    var BL : BoundList .
+
+    crl [initial] :
+        < contract : Contract | step: initial, inputs: IL , state: S ,  contract: C >
+    =>
+        < contract : Contract | step: executing, inputs: IL' , state: S' , contract: C >
+        if S' := saveSlotParams(S, IL) 
+        /\ IL' := cleanInputList(IL) .
+
+    crl [ifTrue] :
+        < contract : Contract | step: executing, inputs: IL , state: S ,  contract: (If O C C') >
+    =>
+        < contract : Contract | step: executing, inputs: IL , state: S , contract: C >
+        if observationToBool(S, O) .
+    
+    crl [ifFalse] :
+        < contract : Contract | step: executing, inputs: IL , state: S ,  contract: (If O C C') >
+    =>
+        < contract : Contract | step: executing, inputs: IL , state: S , contract: C' >
+        if not observationToBool(S, O) .
+
+    crl [let] :
+        < contract : Contract | step: executing, inputs: IL , state: S ,  contract: (Let String Value C) >
+    =>
+        < contract : Contract | step: executing, inputs: IL , state: S' , contract: C >
+        if S' := boundValue(S, String, Value) .
+
+    crl [assert] :
+        < contract : Contract | step: executing, inputs: IL , state: S ,  contract: (Assert O C) >
+    =>
+        < contract : Contract | step: executing, inputs: IL , state: S' , contract: C >
+        if S' := assert(S, O) .
+
+    crl [pay] :
+        < contract : Contract | step: executing, inputs: IL , state: S ,  
+        contract: (Pay Party Payee Token Value C) >
+    =>
+        < contract : Contract | step: executing, inputs: IL , state: S' , contract: C >
+        if S' := pay(S, Payee, Party, Token, Value) .
+
+    crl [whenMoveSlot] :
+        < contract : Contract | step: executing, inputs:((moveToSlot I) , IL) , state: S , 
+         contract: (When CF TO C ) >
+    =>
+        < contract : Contract | step: executing, inputs: IL , state: S' , contract: (When CF TO C ) >
+        if I < timeOutToInt(S, TO)
+        /\ S' := moveToSlot(S, I) .
+    
+    crl [whenMoveSlotToClose] :
+        < contract : Contract | step: executing, inputs:((moveToSlot I) , IL) , state: S ,  
+        contract: (When CF TO C ) >
+    =>
+        < contract : Contract | step: executing, inputs: IL , state: S' , contract: C >
+        if I >= timeOutToInt(S, TO) 
+        /\ S' := moveToSlot(S, I) .
+
+    crl [whenNotify] :
+        < contract : Contract | step: executing, inputs:(notify, IL) , state: S ,  
+        contract: (When [CL, Case (Notify O) C', CL'] TO C ) >
+    =>
+        < contract : Contract | step: executing, inputs: IL , state: S , contract: (C') > 
+        if observationToBool(S, O) .
+
+    crl [whenChoice] :
+        < contract : Contract | step: executing, inputs:((choice String By Party WithValue I), IL) , state: S ,  
+        contract: (When [CL, Case (Choice ChoiceId String Party [BL]) C', CL'] TO C ) >
+    =>
+        < contract : Contract | step: executing, inputs: IL , state: S' , contract: (C') > 
+        if intInBoundList(I, BL)
+        /\ S' := choice(S, ChoiceId String Party, I) .
+
+    crl [whenDeposit] :
+        < contract : Contract | step: executing, inputs:((depositBy Party Amount Value Currency Token IntoAccountOf Party'), IL) , state: S ,  
+        contract: (When [CL, Case (Deposit Party' Party Token Value') C', CL'] TO C ) >
+    =>
+        < contract : Contract | step: executing, inputs: IL , state: S' , contract: (C') > 
+        if I := valueToInt(S, Value)
+        /\ I' := valueToInt(S, Value')
+        /\ I == I'
+        /\ S' := deposit(S, Party', Token, Value) .
+
+    crl [close] :
+        < contract : Contract | step: executing, inputs: IL , state: S ,  contract: Close >
+    =>
+        < contract : Contract | step: finished, inputs: IL , state: S' , contract: Close >
+        if S' := close(S) .
+endm
